@@ -52,15 +52,34 @@ figure;plot(t,x,t,y,'LineWidth',2);
  % state is not a single value:X = [X(K) X'(k) X''(k)]T
  % and Y(K) = H2*X + R2, H2 = [1 0 0]
  % prediction equation:
- % X(K) = X(k-1) + X'(k-1)*dt + X''(k-1)*dt^2/(2!) + Q2
- % X'(k-1) = 0 * X(k-1) +  X'(k-1) + X''(k-1) * dt + Q3;
- % X''(k-1) = 0 * X(k-1) +  0 * X'(k-1) + X''(k-1) + Q3;
+ % X(k) = X(k-1) + X'(k-1)*dt + X''(k-1)*dt^2/(2!) + Q2
+ % X'(k) = 0 * X(k-1) +  X'(k-1) + X''(k-1) * dt + Q3;
+ % X''(k) = 0 * X(k-1) +  0 * X'(k-1) + X''(k-1) + Q4;
  % F = 1 dt 0.5dt^2
  %     0 1   dt
  %     0 0    1
  % H = [1 0 0]
- 
- 
+ % Q = Q2 0 0
+ %     0 Q3 0
+ %     0 0 Q4 %cov 
+ dt = t(2)-t(1);
+ F2 = [1,dt,0.5*dt^2;0,1,dt;0,0,1];
+ H2 = [1,0,0];
+ Q2 = [1,0,0;0,0.01,0;0,0,0.0001];
+ R2 = 20;
+ Xplus2 = zeros(3,L);
+ Xplus2(1,1) = 0.1^2;
+ Xplus2(2,1) = 0;
+ Xplus2(3,1) = 0;
+ Pplus2 = [0.01,0,0;0,0.01,0;0,0,0.0001];
+ for i = 2:L
+    Xminus2 = F2 * Xplus2(:,i-1);
+    Pminus2 = F2 * Pplus2 * F2' + Q2;
+    K2 = (Pminus2*H2')/(H2 * Pminus2 * H2' + R2);
+    Xplus2(:,i) = Xminus2 + K2*(y(i) - H2 * Xminus2);
+    Pplus2 = (eye(3) + K2 * H2) + Pminus2;
+ end
+  figure;plot(t,x,'g',t,y,'b',t,Xplus1,'r',t,Xplus2(1,:),'k');
  
  
  
